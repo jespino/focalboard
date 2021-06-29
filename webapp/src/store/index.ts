@@ -2,11 +2,16 @@
 // See LICENSE.txt for license information.
 
 import {configureStore} from '@reduxjs/toolkit'
+import {createEpicMiddleware, combineEpics} from 'redux-observable'
 
-import {reducer as currentUserReducer} from './currentUser'
+import {reducer as currentUserReducer, currentUserEpic} from './currentUser'
 import {reducer as currentWorkspaceReducer} from './currentWorkspace'
 import {reducer as currentWorkspaceUsersReducer} from './currentWorkspaceUsers'
 import {reducer as languageReducer} from './language'
+
+const epicMiddleware = createEpicMiddleware()
+const epics = combineEpics(currentUserEpic)
+epicMiddleware.run(epics)
 
 const store = configureStore({
     reducer: {
@@ -15,6 +20,7 @@ const store = configureStore({
         currentWorkspaceUsers: currentWorkspaceUsersReducer,
         language: languageReducer,
     },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(epicMiddleware),
 })
 
 export default store
