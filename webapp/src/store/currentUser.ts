@@ -24,7 +24,7 @@ const currentUserSlice = createSlice({
 export const {setUser} = currentUserSlice.actions
 export const {reducer} = currentUserSlice
 
-export const currentUserEpic: Epic<Action, Action> = (action$) => action$.pipe(
+export const currentUserEpic: Epic<Action, PayloadAction<IUser|null>> = (action$) => action$.pipe(
     filter((action: Action) => action.type === 'currentUser/fetch'),
     mergeMap(async () => {
         const user = await client.getMe()

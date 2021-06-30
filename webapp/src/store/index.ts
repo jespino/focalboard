@@ -5,12 +5,18 @@ import {configureStore} from '@reduxjs/toolkit'
 import {createEpicMiddleware, combineEpics} from 'redux-observable'
 
 import {reducer as currentUserReducer, currentUserEpic} from './currentUser'
-import {reducer as currentWorkspaceReducer} from './currentWorkspace'
-import {reducer as currentWorkspaceUsersReducer} from './currentWorkspaceUsers'
-import {reducer as languageReducer} from './language'
+import {reducer as currentWorkspaceReducer, currentWorkspaceEpic} from './currentWorkspace'
+import {reducer as currentWorkspaceUsersReducer, currentWorkspaceUsersEpic} from './currentWorkspaceUsers'
+import {reducer as languageReducer, fetchLanguageEpic, storeLanguageEpic} from './language'
 
 const epicMiddleware = createEpicMiddleware()
-const epics = combineEpics(currentUserEpic)
+const epics = combineEpics<any>(
+    currentUserEpic,
+    fetchLanguageEpic,
+    storeLanguageEpic,
+    currentWorkspaceUsersEpic,
+    currentWorkspaceEpic,
+)
 
 const store = configureStore({
     reducer: {
