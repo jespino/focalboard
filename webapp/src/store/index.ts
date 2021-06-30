@@ -11,7 +11,6 @@ import {reducer as languageReducer} from './language'
 
 const epicMiddleware = createEpicMiddleware()
 const epics = combineEpics(currentUserEpic)
-epicMiddleware.run(epics)
 
 const store = configureStore({
     reducer: {
@@ -20,8 +19,9 @@ const store = configureStore({
         currentWorkspaceUsers: currentWorkspaceUsersReducer,
         language: languageReducer,
     },
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(epicMiddleware),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(epicMiddleware),
 })
+epicMiddleware.run(epics)
 
 export default store
 

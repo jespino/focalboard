@@ -37,9 +37,9 @@ const App = React.memo((): JSX.Element => {
 
     useEffect(() => {
         dispatch(fetchLanguage())
-        dispatch(fetchCurrentUser()).then(() => {
-            setInitialLoad(true)
-        })
+        dispatch(fetchCurrentUser())
+        // TODO: Solve this for redux observable
+        setTimeout(() => setInitialLoad(true), 1000)
     }, [])
 
     return (

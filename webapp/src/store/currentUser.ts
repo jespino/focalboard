@@ -11,19 +11,11 @@ import {IUser} from '../user'
 
 import {RootState} from './index'
 
-export const currentUserEpic: Epic<Action, Action> = (action$) => action$.pipe(
-    filter((action: Action) => action.type === 'currentUser/fetch'),
-    mergeMap(async () => {
-        const user = await client.getMe()
-        return {type: 'currentUser/setUser', payload: user}
-    }),
-)
-
 const currentUserSlice = createSlice({
     name: 'currentUser',
     initialState: {value: null} as {value: IUser|null},
     reducers: {
-        setUser: (state, action: PayloadAction<IUser>) => {
+        setUser: (state, action: PayloadAction<IUser|null>) => {
             state.value = action.payload
         },
     },
@@ -31,6 +23,14 @@ const currentUserSlice = createSlice({
 
 export const {setUser} = currentUserSlice.actions
 export const {reducer} = currentUserSlice
+
+export const currentUserEpic: Epic<Action, Action> = (action$) => action$.pipe(
+    filter((action: Action) => action.type === 'currentUser/fetch'),
+    mergeMap(async () => {
+        const user = await client.getMe()
+        return setUser(user || null)
+    }),
+)
 
 export function getCurrentUser(state: RootState): IUser|null {
     return state.currentUser.value
