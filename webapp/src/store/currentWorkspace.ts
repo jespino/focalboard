@@ -1,17 +1,13 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 
-import {createSlice, createAsyncThunk, PayloadAction} from '@reduxjs/toolkit'
+import {createSlice, Action, PayloadAction} from '@reduxjs/toolkit'
+import {takeEvery, put, call, StrictEffect} from 'redux-saga/effects'
 
 import {default as client} from '../octoClient'
 import {IWorkspace} from '../blocks/workspace'
 
 import {RootState} from './index'
-
-export const fetchCurrentWorkspace = createAsyncThunk(
-    'currentWorkspace/fetch',
-    async () => client.getWorkspace(),
-)
 
 const currentWorkspaceSlice = createSlice({
     name: 'currentWorkspace',
@@ -21,16 +17,26 @@ const currentWorkspaceSlice = createSlice({
             state.value = action.payload
         },
     },
-    extraReducers: (builder) => {
-        builder.addCase(fetchCurrentWorkspace.fulfilled, (state, action) => {
-            state.value = action.payload || null
-        })
-    },
 })
 
 export const {setWorkspace} = currentWorkspaceSlice.actions
 export const {reducer} = currentWorkspaceSlice
 
+function* fetchCurrentWorkspaceGen(): Generator<StrictEffect> {
+    const workspace = yield call(client.getWorkspace.bind(client))
+    if (workspace) {
+        yield put(setWorkspace(workspace as IWorkspace))
+    }
+}
+
+export function* currentWorkspaceSaga(): Generator<StrictEffect> {
+    yield takeEvery('currentWorkspace/fetch', fetchCurrentWorkspaceGen)
+}
+
 export function getCurrentWorkspace(state: RootState): IWorkspace|null {
     return state.currentWorkspace.value
+}
+
+export function fetchCurrentWorkspace(): Action {
+    return {type: 'currentWorkspace/fetch'}
 }

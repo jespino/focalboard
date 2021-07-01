@@ -2,11 +2,24 @@
 // See LICENSE.txt for license information.
 
 import {configureStore} from '@reduxjs/toolkit'
+import createSagaMiddleware from 'redux-saga'
+import {all} from 'redux-saga/effects'
 
-import {reducer as currentUserReducer} from './currentUser'
-import {reducer as currentWorkspaceReducer} from './currentWorkspace'
-import {reducer as currentWorkspaceUsersReducer} from './currentWorkspaceUsers'
-import {reducer as languageReducer} from './language'
+import {reducer as currentUserReducer, currentUserSaga} from './currentUser'
+import {reducer as currentWorkspaceReducer, currentWorkspaceSaga} from './currentWorkspace'
+import {reducer as currentWorkspaceUsersReducer, currentWorkspaceUsersSaga} from './currentWorkspaceUsers'
+import {reducer as languageReducer, fetchLanguageSaga, storeLanguageSaga} from './language'
+
+const sagaMiddleware = createSagaMiddleware()
+function* rootSaga() {
+    yield all([
+        currentUserSaga(),
+        fetchLanguageSaga(),
+        storeLanguageSaga(),
+        currentWorkspaceUsersSaga(),
+        currentWorkspaceSaga(),
+    ])
+}
 
 const store = configureStore({
     reducer: {
@@ -15,7 +28,9 @@ const store = configureStore({
         currentWorkspaceUsers: currentWorkspaceUsersReducer,
         language: languageReducer,
     },
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({thunk: false}).concat(sagaMiddleware),
 })
+sagaMiddleware.run(rootSaga)
 
 export default store
 

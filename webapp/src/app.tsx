@@ -37,10 +37,10 @@ const App = React.memo((): JSX.Element => {
 
     useEffect(() => {
         dispatch(fetchLanguage())
-        dispatch(fetchCurrentUser()).then(() => {
-            setInitialLoad(true)
-        })
-    }, [])
+        dispatch(fetchCurrentUser())
+        // TODO: Fix this
+        setTimeout(() => setInitialLoad(true), 1000)
+    }, [dispatch])
 
     return (
         <IntlProvider
