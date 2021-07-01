@@ -5,7 +5,7 @@ import React from 'react'
 import Select from 'react-select'
 
 import {IUser} from '../../../user'
-import {getCurrentWorkspaceUsers, getCurrentWorkspaceUsersById} from '../../../store/currentWorkspaceUsers'
+import {getCurrentWorkspaceUsers, getCurrentWorkspaceUsersById} from '../../../store/currentWorkspace'
 import {useAppSelector} from '../../../store/hooks'
 
 import './user.scss'

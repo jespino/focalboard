@@ -11,11 +11,13 @@ import {IUser} from '../user'
 
 import {RootState} from './index'
 
+type CurrentUserState = {value: IUser|null}
+
 const currentUserSlice = createSlice({
     name: 'currentUser',
-    initialState: {value: null} as {value: IUser|null},
+    initialState: {value: null},
     reducers: {
-        setUser: (state, action: PayloadAction<IUser|null>) => {
+        setUser: (state: CurrentUserState, action: PayloadAction<IUser|null>) => {
             state.value = action.payload
         },
     },

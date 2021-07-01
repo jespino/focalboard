@@ -17,7 +17,7 @@ import {Utils} from '../utils'
 import {BoardTree, MutableBoardTree} from '../viewModel/boardTree'
 import {MutableWorkspaceTree, WorkspaceTree} from '../viewModel/workspaceTree'
 import './boardPage.scss'
-import {fetchCurrentWorkspaceUsers} from '../store/currentWorkspaceUsers'
+import {fetchCurrentWorkspaceUsers} from '../store/currentWorkspace'
 
 type Props = RouteComponentProps<{workspaceId?: string}> & {
     readonly?: boolean
