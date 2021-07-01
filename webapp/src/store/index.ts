@@ -25,7 +25,7 @@ const store = configureStore({
         currentWorkspaceUsers: currentWorkspaceUsersReducer,
         language: languageReducer,
     },
-    middleware: (getDefaultMiddleware) => getDefaultMiddleware().prepend(epicMiddleware),
+    middleware: (getDefaultMiddleware) => getDefaultMiddleware({thunk: false}).prepend(epicMiddleware),
 })
 epicMiddleware.run(epics)
 
