@@ -176,7 +176,7 @@ const Table = (props: Props): JSX.Element => {
 
         // Move template to new index
         const destIndex = container ? board.fields.cardProperties.indexOf(container) : 0
-        await mutator.changePropertyTemplateOrder(board, template, destIndex >= 0 ? destIndex : 0)
+        await mutator.changePropertyTemplateOrder(board.id, board.fields.cardProperties, template, destIndex >= 0 ? destIndex : 0)
     }, [board])
 
     const onDropToGroupHeader = useCallback(async (option: IPropertyOption, dstOption?: IPropertyOption) => {
@@ -255,7 +255,7 @@ const Table = (props: Props): JSX.Element => {
             }
 
             mutator.performAsUndoGroup(async () => {
-                await mutator.changeViewCardOrder(activeView, cardOrder, description)
+                await mutator.changeViewCardOrder(activeView.id, activeView.fields.cardOrder, cardOrder, description)
             })
         }
     }, [activeView, cards, props.selectedCardIds, groupByProperty])

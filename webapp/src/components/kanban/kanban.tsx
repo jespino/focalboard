@@ -104,7 +104,7 @@ const Kanban = (props: Props) => {
                     }
                 }
                 const newOrder = orderAfterMoveToColumn(draggedCardIds, optionId)
-                awaits.push(mutator.changeViewCardOrder(activeView, newOrder, description))
+                awaits.push(mutator.changeViewCardOrder(activeView.id, activeView.fields.cardOrder, newOrder, description))
                 await Promise.all(awaits)
             })
         } else if (dstOption) {
@@ -162,7 +162,7 @@ const Kanban = (props: Props) => {
                 }
             }
             await Promise.all(awaits)
-            await mutator.changeViewCardOrder(activeView, cardOrder, description)
+            await mutator.changeViewCardOrder(activeView.id, activeView.fields.cardOrder, cardOrder, description)
         })
     }, [cards, activeView, groupByProperty, props.selectedCardIds])
 

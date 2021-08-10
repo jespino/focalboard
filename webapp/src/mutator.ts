@@ -270,18 +270,23 @@ class Mutator {
         await this.updateBlocks(changedBlocks, oldBlocks, description)
     }
 
-    async changePropertyTemplateOrder(board: Board, template: IPropertyTemplate, destIndex: number) {
-        const templates = board.fields.cardProperties
-        const newValue = templates.slice()
+    async changePropertyTemplateOrder(boardId: string, oldCardProperties: IPropertyTemplate[], template: IPropertyTemplate, destIndex: number) {
+        const newCardProperties = oldCardProperties.slice()
 
-        const srcIndex = templates.indexOf(template)
+        const srcIndex = oldCardProperties.indexOf(template)
         Utils.log(`srcIndex: ${srcIndex}, destIndex: ${destIndex}`)
-        newValue.splice(destIndex, 0, newValue.splice(srcIndex, 1)[0])
+        newCardProperties.splice(destIndex, 0, newCardProperties.splice(srcIndex, 1)[0])
 
-        const newBoard = createBoard(board)
-        newBoard.fields.cardProperties = newValue
-
-        await this.updateBlock(newBoard, board, 'reorder properties')
+        await undoManager.perform(
+            async () => {
+                await octoClient.patchBlock(boardId, {updatedFields: {cardProperties: newCardProperties}})
+            },
+            async () => {
+                await octoClient.patchBlock(boardId, {updatedFields: {cardProperties: oldCardProperties}})
+            },
+            'reorder properties',
+            this.undoGroupId,
+        )
     }
 
     async deleteProperty(board: Board, views: BoardView[], cards: Card[], propertyId: string) {
@@ -552,10 +557,17 @@ class Mutator {
         await this.updateBlock(newView, view, 'show column')
     }
 
-    async changeViewCardOrder(view: BoardView, cardOrder: string[], description = 'reorder'): Promise<void> {
-        const newView = createBoardView(view)
-        newView.fields.cardOrder = cardOrder
-        await this.updateBlock(newView, view, description)
+    async changeViewCardOrder(viewId: string, oldCardOrder: string[], cardOrder: string[], description = 'reorder'): Promise<void> {
+        await undoManager.perform(
+            async () => {
+                await octoClient.patchBlock(viewId, {updatedFields: {cardOrder}})
+            },
+            async () => {
+                await octoClient.patchBlock(viewId, {updatedFields: {cardOrder: oldCardOrder}})
+            },
+            description,
+            this.undoGroupId,
+        )
     }
 
     // Duplicate
