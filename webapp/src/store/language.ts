@@ -22,7 +22,7 @@ export const storeLanguage = createAsyncThunk(
 
 const languageSlice = createSlice({
     name: 'language',
-    initialState: {value: 'en'} as {value: string},
+    initialState: {value: (window as any).isFocalboardPlugin ? 'mattermost' : 'en'} as {value: string},
     reducers: {
         setLanguage: (state, action: PayloadAction<string>) => {
             state.value = action.payload

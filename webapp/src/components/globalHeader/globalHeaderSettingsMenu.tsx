@@ -6,8 +6,8 @@ import {useIntl} from 'react-intl'
 import {Archiver} from '../../archiver'
 import Menu from '../../widgets/menu'
 import MenuWrapper from '../../widgets/menuWrapper'
-import {useAppDispatch} from '../../store/hooks'
-import {storeLanguage} from '../../store/language'
+import {useAppDispatch, useAppSelector} from '../../store/hooks'
+import {storeLanguage, getLanguage} from '../../store/language'
 import {UserSettings} from '../../userSettings'
 import CheckIcon from '../../widgets/icons/check'
 import SettingsIcon from '../../widgets/icons/settings'
@@ -17,6 +17,7 @@ import './globalHeaderSettingsMenu.scss'
 const GlobalHeaderSettingsMenu = React.memo(() => {
     const intl = useIntl()
     const dispatch = useAppDispatch()
+    const currentLanguage = useAppSelector<string>(getLanguage)
 
     const [randomIcons, setRandomIcons] = useState(UserSettings.prefillRandomIcons)
     const toggleRandomIcons = () => {
@@ -25,6 +26,11 @@ const GlobalHeaderSettingsMenu = React.memo(() => {
     }
 
     const languages = [
+        {
+            code: 'mattermost',
+            name: 'mattermost',
+            displayName: 'From Mattermost',
+        },
         {
             code: 'en',
             name: 'english',
@@ -111,7 +117,7 @@ const GlobalHeaderSettingsMenu = React.memo(() => {
                                     id={`${language.name}-lang`}
                                     name={language.displayName}
                                     onClick={async () => dispatch(storeLanguage(language.code))}
-                                    rightIcon={intl.locale.toLowerCase() === language.code ? <CheckIcon/> : null}
+                                    rightIcon={currentLanguage === language.code ? <CheckIcon/> : null}
                                 />
                             ))
                         }

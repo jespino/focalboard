@@ -17,6 +17,8 @@ const supportedLanguages = ['de', 'fr', 'ja', 'nl', 'ru', 'es', 'oc', 'tr', 'zh-
 
 export function getMessages(lang: string): {[key: string]: string} {
     switch (lang) {
+    case 'mattermost':
+        return getMessages((window as any).mattermostLanguage)
     case 'de':
         return messages_de
     case 'fr':
@@ -48,6 +50,8 @@ export function getCurrentLanguage(): string {
             lang = navigator.language
         } else if (supportedLanguages.includes(navigator.language.split(/[-_]/)[0])) {
             lang = navigator.language.split(/[-_]/)[0]
+        } else if ((window as any).isFocalboardPlugin) {
+            lang = 'mattermost'
         } else {
             lang = 'en'
         }

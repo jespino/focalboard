@@ -19,7 +19,7 @@ const HeaderItems = () => {
     const language = useAppSelector<string>(getLanguage)
     return (
         <IntlProvider
-            locale={language.split(/[_]/)[0]}
+            locale={language === 'mattermost' ? (window as any).mattermostLanguage : language.split(/[_]/)[0]}
             messages={getMessages(language)}
         >
             <div className='GlobalHeaderComponent'>

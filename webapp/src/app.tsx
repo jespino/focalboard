@@ -56,7 +56,7 @@ const App = React.memo((): JSX.Element => {
 
     return (
         <IntlProvider
-            locale={language.split(/[_]/)[0]}
+            locale={language === 'mattermost' ? (window as any).mattermostLanguage : language.split(/[_]/)[0]}
             messages={getMessages(language)}
         >
             <DndProvider backend={Utils.isMobile() ? TouchBackend : HTML5Backend}>

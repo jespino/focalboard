@@ -7,14 +7,17 @@ import {useHistory} from 'mm-react-router-dom'
 
 import {GlobalState} from 'mattermost-redux/types/store'
 import {getTheme} from 'mattermost-redux/selectors/entities/preferences'
+import {getCurrentUserLocale} from 'mattermost-redux/selectors/entities/i18n'
 
 const windowAny = (window as any)
 windowAny.baseURL = '/plugins/focalboard'
 windowAny.frontendBaseURL = '/boards'
 windowAny.isFocalboardPlugin = true
+windowAny.mattermostLanguage = 'en'
 
 import App from '../../../webapp/src/app'
 import store from '../../../webapp/src/store'
+import {storeLanguage, getLanguage} from '../../../webapp/src/store/language'
 import GlobalHeader from '../../../webapp/src/components/globalHeader/globalHeader'
 import FocalboardIcon from '../../../webapp/src/widgets/icons/logo'
 import {setMattermostTheme} from '../../../webapp/src/theme'
@@ -80,23 +83,32 @@ export default class Plugin {
     registry?: PluginRegistry
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function
-    public async initialize(registry: PluginRegistry, store: Store<GlobalState, Action<Record<string, unknown>>>) {
+    async initialize(registry: PluginRegistry, mmStore: Store<GlobalState, Action<Record<string, unknown>>>): Promise<void> {
         this.registry = registry
 
-        let theme = getTheme(store.getState())
+        let theme = getTheme(mmStore.getState())
+        windowAny.mattermostLanguage = getCurrentUserLocale(mmStore.getState())
         setMattermostTheme(theme)
-        store.subscribe(() => {
-            const currentTheme = getTheme(store.getState())
+        mmStore.subscribe(() => {
+            const currentTheme = getTheme(mmStore.getState())
+            const currentLocale = getCurrentUserLocale(mmStore.getState())
             if (currentTheme !== theme && currentTheme) {
                 setMattermostTheme(currentTheme)
                 theme = currentTheme
+            }
+            if (currentLocale !== windowAny.mattermostLanguage && currentLocale) {
+                windowAny.mattermostLanguage = currentLocale
+                if (getLanguage(store.getState()) === 'mattermost') {
+                    store.dispatch(storeLanguage(''))
+                    store.dispatch(storeLanguage('mattermost'))
+                }
             }
         })
 
         if (this.registry.registerProduct) {
             windowAny.frontendBaseURL = '/boards'
             const goToFocalboardWorkspace = () => {
-                const currentChannel = store.getState().entities.channels.currentChannelId
+                const currentChannel = mmStore.getState().entities.channels.currentChannelId
                 window.open(`${window.location.origin}/boards/workspace/${currentChannel}`)
             }
             this.channelHeaderButtonId = registry.registerChannelHeaderButtonAction(<FocalboardIcon/>, goToFocalboardWorkspace, '', 'Focalboard Workspace')
@@ -104,7 +116,7 @@ export default class Plugin {
             this.registry.registerCustomRoute('go-to-current-workspace', () => {
                 const history = useHistory()
                 useEffect(() => {
-                    const currentChannel = store.getState().entities.channels.currentChannelId
+                    const currentChannel = mmStore.getState().entities.channels.currentChannelId
                     if (currentChannel) {
                         history.push(`/boards/workspace/${currentChannel}`)
                     } else {
@@ -117,14 +129,14 @@ export default class Plugin {
         } else {
             windowAny.frontendBaseURL = '/plug/focalboard'
             this.channelHeaderButtonId = registry.registerChannelHeaderButtonAction(<FocalboardIcon/>, () => {
-                const currentChannel = store.getState().entities.channels.currentChannelId
+                const currentChannel = mmStore.getState().entities.channels.currentChannelId
                 window.open(`${window.location.origin}/plug/focalboard/workspace/${currentChannel}`)
             }, '', 'Focalboard Workspace')
             this.registry.registerCustomRoute('/', MainApp)
         }
     }
 
-    public uninitialize() {
+    uninitialize(): void {
         if (this.channelHeaderButtonId) {
             this.registry?.unregisterComponent(this.channelHeaderButtonId)
         }
