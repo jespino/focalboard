@@ -5,6 +5,7 @@ import {
     Router,
     Navigate,
     Routes,
+    Route,
     useParams,
     useNavigate,
     generatePath,
@@ -20,11 +21,14 @@ import LoginPage from './pages/loginPage'
 import RegisterPage from './pages/registerPage'
 import {Utils} from './utils'
 import octoClient from './octoClient'
+import {UserSettingKey} from './userSettings'
+import {IUser, UserPropPrefix} from './user'
 import {setGlobalError, getGlobalError} from './store/globalError'
 import {useAppSelector, useAppDispatch} from './store/hooks'
 import {getFirstTeam, fetchTeams, Team} from './store/teams'
+import {useCurrentRoutePath} from './hooks/router'
+import {getLoggedIn, getMe} from './store/users'
 import {UserSettings} from './userSettings'
-import FBRoute from './route'
 
 declare let window: IAppWindow
 
@@ -49,14 +53,14 @@ function HomeToCurrentTeam() {
         const lastViewID = UserSettings.lastViewId[lastBoardID]
 
         if (lastBoardID && lastViewID) {
-            return <Navigate to={`/team/${teamID}/${lastBoardID}/${lastViewID}`} replace/>
+            return <Navigate to={`team/${teamID}/${lastBoardID}/${lastViewID}`} replace/>
         }
         if (lastBoardID) {
-            return <Navigate to={`/team/${teamID}/${lastBoardID}`} replace/>
+            return <Navigate to={`team/${teamID}/${lastBoardID}`} replace/>
         }
     }
 
-    return <Navigate to={`/team/${teamID}`} replace/>
+    return <Navigate to={`team/${teamID}`} replace/>
 }
 
 function WorkspaceToTeamRedirect() {
@@ -90,6 +94,66 @@ function GlobalErrorRedirect() {
     }, [globalError, navigate])
 
     return null
+}
+
+type LoginRequiredProps = {
+    pathType?: string
+    children?: React.ReactElement
+    skipWelcome?: boolean
+}
+
+function LoginRequired(props: LoginRequiredProps): React.ReactElement|null {
+    const loggedIn = useAppSelector<boolean|null>(getLoggedIn)
+    const params = useParams<any>()
+    const me = useAppSelector<IUser|null>(getMe)
+
+    let originalPath
+    if (props.pathType === "board") {
+        originalPath = `/board/${Utils.buildOriginalPath('', params.boardId, params.viewId, params.cardId)}`
+    } else if (props.pathType === "team") {
+        originalPath = `/team/${Utils.buildOriginalPath(params.teamId, params.boardId, params.viewId, params.cardId)}`
+    } else if (props.pathType === "") {
+        originalPath = `/${Utils.buildOriginalPath('', params.boardId, params.viewId, params.cardId)}`
+    }
+
+    if (loggedIn === false) {
+        if (originalPath) {
+            let redirectUrl = '/' + Utils.buildURL(originalPath)
+            if (redirectUrl.indexOf('//') === 0) {
+                redirectUrl = redirectUrl.slice(1)
+            }
+            const loginUrl = `/error?id=not-logged-in&r=${encodeURIComponent(redirectUrl)}`
+            return <Navigate to={loginUrl} replace/>
+        }
+        return <Navigate to='/error?id=not-logged-in' replace/>
+    }
+
+    if (!props.skipWelcome && Utils.isFocalboardPlugin() && (me?.id !== 'single-user') && loggedIn === true && !me?.props[UserPropPrefix + UserSettingKey.WelcomePageViewed]) {
+        if (originalPath) {
+            return <Navigate to={`/welcome?r=${originalPath}`} replace/>
+        }
+        return <Navigate to='/welcome' replace/>
+    }
+
+    return props.children || null
+}
+
+type WelcomeRedirectProps = {
+    children?: React.ReactElement
+    getOriginalPath?: (params: any) => string
+}
+
+function WelcomeRedirect(props: WelcomeRedirectProps): React.ReactNode {
+    const loggedIn = useAppSelector<boolean|null>(getLoggedIn)
+    const params = useParams<any>()
+
+    let originalPath
+    if (props.getOriginalPath) {
+        originalPath = props.getOriginalPath(params)
+    }
+
+
+    return props.children
 }
 
 type RouterWithHistoryProps = {
@@ -148,77 +212,43 @@ const FocalboardRouter = (props: Props): JSX.Element => {
         >
             <GlobalErrorRedirect/>
             <Routes>
-                {isPlugin &&
-                    <FBRoute
-                        path='/'
-                        loginRequired={true}
-                    >
-                        <HomeToCurrentTeam/>
-                    </FBRoute>}
-                {isPlugin &&
-                    <FBRoute path='/welcome'>
-                        <WelcomePage/>
-                    </FBRoute>}
+                {isPlugin && <Route path='/' element={<LoginRequired skipWelcome={true}><HomeToCurrentTeam/></LoginRequired>}/>}
 
-                <FBRoute path='/error'>
-                    <ErrorPage/>
-                </FBRoute>
+                <Route path='/error' element={<ErrorPage/>}/>
 
-                {!isPlugin &&
-                    <FBRoute path='/login'>
-                        <LoginPage/>
-                    </FBRoute>}
-                {!isPlugin &&
-                    <FBRoute path='/register'>
-                        <RegisterPage/>
-                    </FBRoute>}
-                {!isPlugin &&
-                    <FBRoute path='/change_password'>
-                        <ChangePasswordPage/>
-                    </FBRoute>}
+                {isPlugin && <Route path='/welcome' element={<LoginRequired skipWelcome={true}><WelcomePage/></LoginRequired>}/>}
+                {!isPlugin && <Route path='/login' element={<LoginPage/>}/>}
+                {!isPlugin && <Route path='/register' element={<RegisterPage/>} />}
+                {!isPlugin && <Route path='/change_password' element={<ChangePasswordPage/>}/>}
 
-                <FBRoute path='/shared/:boardId?/:viewId?/:cardId?'>
-                    <BoardPage readonly={true}/>
-                </FBRoute>
-                <FBRoute
-                    loginRequired={true}
-                    path='/board/:boardId?/:viewId?/:cardId?'
-                    getOriginalPath={({boardId, viewId, cardId}) => {
-                        return `/board/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
-                    }}
-                >
-                    <BoardPage/>
-                </FBRoute>
-                <FBRoute path='/workspace/:workspaceId/:boardId?/:viewId?/:cardId?'>
-                    <WorkspaceToTeamRedirect/>
-                </FBRoute>
-                <FBRoute path='/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?'>
-                    <WorkspaceToTeamRedirect/>
-                </FBRoute>
-                <FBRoute
-                    loginRequired={true}
-                    path='/team/:teamId/:boardId?/:viewId?/:cardId?'
-                    getOriginalPath={({teamId, boardId, viewId, cardId}) => {
-                        return `/team/${Utils.buildOriginalPath(teamId, boardId, viewId, cardId)}`
-                    }}
-                >
-                    <BoardPage/>
-                </FBRoute>
+                <Route path='/shared/' element={<BoardPage readonly={true}/>} />
+                <Route path='/shared/:boardId' element={<BoardPage readonly={true}/>} />
+                <Route path='/shared/:boardId/:viewId' element={<BoardPage readonly={true}/>} />
+                <Route path='/shared/:boardId/:viewId/:cardId' element={<BoardPage readonly={true}/>} />
 
-                {!isPlugin &&
-                    <FBRoute
-                        path='/:boardId?/:viewId?/:cardId?'
-                        loginRequired={true}
-                        getOriginalPath={({boardId, viewId, cardId}) => {
-                            const boardIdIsValidUUIDV4 = UUID_REGEX.test(boardId || '')
-                            if (boardIdIsValidUUIDV4) {
-                                return `/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
-                            }
-                            return ''
-                        }}
-                    >
-                        <BoardPage/>
-                    </FBRoute>}
+                <Route path='/board/' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>
+                <Route path='/board/:boardId/' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>
+                <Route path='/board/:boardId/:viewId' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>
+                <Route path='/board/:boardId/:viewId/:cardId' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>
+
+                <Route path='/workspace/:workspaceId/' element={<WorkspaceToTeamRedirect/>} />
+                <Route path='/workspace/:workspaceId/:boardId' element={<WorkspaceToTeamRedirect/>} />
+                <Route path='/workspace/:workspaceId/:boardId/:viewId' element={<WorkspaceToTeamRedirect/>} />
+                <Route path='/workspace/:workspaceId/:boardId/:viewId/:cardId' element={<WorkspaceToTeamRedirect/>} />
+                <Route path='/workspace/:workspaceId/shared/' element={<WorkspaceToTeamRedirect/>} />
+                <Route path='/workspace/:workspaceId/shared/:boardId' element={<WorkspaceToTeamRedirect/>} />
+                <Route path='/workspace/:workspaceId/shared/:boardId/:viewId' element={<WorkspaceToTeamRedirect/>} />
+                <Route path='/workspace/:workspaceId/shared/:boardId/:viewId/:cardId' element={<WorkspaceToTeamRedirect/>} />
+
+                <Route path='/team/:teamId/' element={<LoginRequired pathType='team'><BoardPage/></LoginRequired>}/>
+                <Route path='/team/:teamId/:boardId' element={<LoginRequired pathType='team'><BoardPage/></LoginRequired>}/>
+                <Route path='/team/:teamId/:boardId/:viewId' element={<LoginRequired pathType='team'><BoardPage/></LoginRequired>}/>
+                <Route path='/team/:teamId/:boardId/:viewId/:cardId' element={<LoginRequired pathType='team'><BoardPage/></LoginRequired>}/>
+
+                {!isPlugin && <Route path='/' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>}
+                {!isPlugin && <Route path='/:boardId/' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>}
+                {!isPlugin && <Route path='/:boardId/:viewId' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>}
+                {!isPlugin && <Route path='/:boardId/:viewId/:cardId' element={<LoginRequired pathType='board'><BoardPage/></LoginRequired>}/>}
             </Routes>
         </RouterWithHistory>
     )

@@ -15,6 +15,7 @@ import {getTemplates, getCurrentBoardId} from '../../store/boards'
 import {getCurrentTeam, Team} from '../../store/teams'
 import {fetchGlobalTemplates, getGlobalTemplates} from '../../store/globalTemplates'
 import {useAppDispatch, useAppSelector} from '../../store/hooks'
+import {usePathType} from '../../hooks/router'
 import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../telemetry/telemetryClient'
 
 import './boardTemplateSelector.scss'
@@ -39,6 +40,7 @@ const BoardTemplateSelector = (props: Props) => {
     const currentTeam = useAppSelector<Team|null>(getCurrentTeam)
     const {title, description, onClose} = props
     const dispatch = useAppDispatch()
+    const pathType = usePathType()
     const intl = useIntl()
     const navigate = useNavigate()
     const params = useParams<{boardId: string, viewId?: string}>()

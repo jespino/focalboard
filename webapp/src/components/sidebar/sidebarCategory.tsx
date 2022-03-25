@@ -53,7 +53,6 @@ const SidebarCategory = (props: Props) => {
     const [categoryMenuOpen, setCategoryMenuOpen] = useState<boolean>(false)
 
     const params = useParams<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
-    const path = useCurrentRoutePath()
     const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false)
     const [showUpdateCategoryModal, setShowUpdateCategoryModal] = useState(false)
     const me = useAppSelector<IUser|null>(getMe)
@@ -62,29 +61,22 @@ const SidebarCategory = (props: Props) => {
     const teamID = team?.id || ''
 
     const showBoard = useCallback((boardId) => {
-        // if the same board, reuse the match params
-        // otherwise remove viewId and cardId, results in first view being selected
-        const newParams = {...params, boardId: boardId || ''}
-        if (boardId !== params.boardId) {
-            newParams.viewId = undefined
-            newParams.cardId = undefined
+        if (params.teamId) {
+            navigate(`/team/${params.teamId}/${boardId}`)
+        } else {
+            navigate(`/${boardId}`)
         }
-        const newPath = generatePath(path, newParams)
-        navigate(newPath)
         props.hideSidebar()
-    }, [params, path, navigate])
+    }, [params.teamId, navigate])
 
     const showView = useCallback((viewId, boardId) => {
-        // if the same board, reuse the match params
-        // otherwise remove viewId and cardId, results in first view being selected
-        const newParams = {...params, boardId: boardId || '', viewId: viewId || ''}
-        if (boardId !== params.boardId && viewId !== params.viewId) {
-            newParams.cardId = undefined
+        if (params.teamId) {
+            navigate(`/team/${params.teamId}/${boardId}/${viewId}`)
+        } else {
+            navigate(`/${boardId}/${viewId}`)
         }
-        const newPath = generatePath(path, newParams)
-        navigate(newPath)
         props.hideSidebar()
-    }, [params, path, navigate])
+    }, [params.teamId, navigate])
 
     const blocks = props.categoryBlocks.blockIDs || []
 
