@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import React, {useEffect, useState, useMemo, useCallback} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {useRouteMatch} from 'react-router-dom'
+import {useParams} from 'react-router-dom'
 
 import Workspace from '../../components/workspace'
 import octoClient from '../../octoClient'
@@ -39,9 +39,9 @@ const BoardPage = (props: Props): JSX.Element => {
     const activeBoardId = useAppSelector(getCurrentBoardId)
     const activeViewId = useAppSelector(getCurrentViewId)
     const dispatch = useAppDispatch()
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string, teamId?: string}>()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string, teamId?: string}>()
     const [mobileWarningClosed, setMobileWarningClosed] = useState(UserSettings.mobileWarningClosed)
-    const teamId = match.params.teamId || UserSettings.lastTeamId || '0'
+    const teamId = params.teamId || UserSettings.lastTeamId || '0'
     const me = useAppSelector<IUser|null>(getMe)
 
     // if we're in a legacy route and not showing a shared board,
@@ -112,12 +112,12 @@ const BoardPage = (props: Props): JSX.Element => {
     }, [])
 
     useEffect(() => {
-        dispatch(loadAction(match.params.boardId))
+        dispatch(loadAction(params.boardId || ''))
 
-        if (match.params.boardId && me) {
-            loadOrJoinBoard(me.id, teamId, match.params.boardId, match.params.viewId)
+        if (params.boardId && me) {
+            loadOrJoinBoard(me.id, teamId, params.boardId, params.viewId || '')
         }
-    }, [teamId, match.params.boardId, match.params.viewId])
+    }, [teamId, params.boardId, params.viewId])
 
     if (props.readonly) {
         useEffect(() => {
@@ -135,7 +135,7 @@ const BoardPage = (props: Props): JSX.Element => {
             <UndoRedoHotKeys/>
             <WebsocketConnection
                 teamId={teamId}
-                boardId={match.params.boardId}
+                boardId={params.boardId || ''}
                 readonly={props.readonly || false}
                 loadAction={loadAction}
             />

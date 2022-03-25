@@ -115,7 +115,7 @@ function customHistory() {
     }
 }
 
-let browserHistory: History<unknown>
+let browserHistory: History
 
 const MainApp = (props: Props) => {
     wsClient.initPlugin(manifest.id, manifest.version, props.webSocketClient)

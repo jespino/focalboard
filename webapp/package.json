@@ -60,7 +60,7 @@
 		"react-hotkeys-hook": "^3.4.4",
 		"react-intl": "^5.24.7",
 		"react-redux": "^7.2.6",
-		"react-router-dom": "^5.2.1",
+		"react-router-dom": "^6.2.2",
 		"react-select": "^4.3.0",
 		"trim-newlines": "^4.0.2"
 	},
@@ -102,7 +102,6 @@
 		"@types/react-dom": "^17.0.14",
 		"@types/react-intl": "^3.0.0",
 		"@types/react-redux": "^7.1.23",
-		"@types/react-router-dom": "^5.3.3",
 		"@types/react-select": "^4.0.13",
 		"@types/redux-mock-store": "^1.0.3",
 		"@typescript-eslint/eslint-plugin": "^5.16.0",

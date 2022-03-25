@@ -83,12 +83,10 @@ jest.mock('react-router-dom', () => {
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
+        useParams: jest.fn(() => {
             return {
-                params: {
-                    boardId: board.id,
-                    viewId: activeView.id,
-                },
+                boardId: board.id,
+                viewId: activeView.id,
             }
         }),
     }

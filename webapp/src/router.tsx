@@ -3,10 +3,10 @@
 import React, {useEffect, useMemo} from 'react'
 import {
     Router,
-    Redirect,
-    Switch,
-    useRouteMatch,
-    useHistory,
+    Navigate,
+    Routes,
+    useParams,
+    useNavigate,
     generatePath,
 } from 'react-router-dom'
 import {createBrowserHistory, History} from 'history'
@@ -30,56 +30,47 @@ declare let window: IAppWindow
 
 const UUID_REGEX = new RegExp(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/)
 
-function HomeToCurrentTeam(props: {path: string, exact: boolean}) {
-    return (
-        <FBRoute
-            path={props.path}
-            exact={props.exact}
-            loginRequired={true}
-            component={() => {
-                const firstTeam = useAppSelector<Team|null>(getFirstTeam)
-                const dispatch = useAppDispatch()
-                useEffect(() => {
-                    dispatch(fetchTeams())
-                }, [])
+function HomeToCurrentTeam() {
+    const firstTeam = useAppSelector<Team|null>(getFirstTeam)
+    const dispatch = useAppDispatch()
+    useEffect(() => {
+        dispatch(fetchTeams())
+    }, [])
 
-                let teamID = (window.getCurrentTeamId && window.getCurrentTeamId()) || ''
-                const lastTeamID = UserSettings.lastTeamId
-                if (!teamID && !firstTeam && !lastTeamID) {
-                    return <></>
-                }
-                teamID = teamID || lastTeamID || firstTeam?.id || ''
+    let teamID = (window.getCurrentTeamId && window.getCurrentTeamId()) || ''
+    const lastTeamID = UserSettings.lastTeamId
+    if (!teamID && !firstTeam && !lastTeamID) {
+        return <></>
+    }
+    teamID = teamID || lastTeamID || firstTeam?.id || ''
 
-                if (UserSettings.lastBoardId) {
-                    const lastBoardID = UserSettings.lastBoardId[teamID]
-                    const lastViewID = UserSettings.lastViewId[lastBoardID]
+    if (UserSettings.lastBoardId) {
+        const lastBoardID = UserSettings.lastBoardId[teamID]
+        const lastViewID = UserSettings.lastViewId[lastBoardID]
 
-                    if (lastBoardID && lastViewID) {
-                        return <Redirect to={`/team/${teamID}/${lastBoardID}/${lastViewID}`}/>
-                    }
-                    if (lastBoardID) {
-                        return <Redirect to={`/team/${teamID}/${lastBoardID}`}/>
-                    }
-                }
+        if (lastBoardID && lastViewID) {
+            return <Navigate to={`/team/${teamID}/${lastBoardID}/${lastViewID}`} replace/>
+        }
+        if (lastBoardID) {
+            return <Navigate to={`/team/${teamID}/${lastBoardID}`} replace/>
+        }
+    }
 
-                return <Redirect to={`/team/${teamID}`}/>
-            }}
-        />
-    )
+    return <Navigate to={`/team/${teamID}`} replace/>
 }
 
 function WorkspaceToTeamRedirect() {
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string, workspaceId?: string}>()
-    const history = useHistory()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string, workspaceId?: string}>()
+    const navigate = useNavigate()
     useEffect(() => {
-        octoClient.getBoard(match.params.boardId).then((board) => {
+        octoClient.getBoard(params.boardId!).then((board) => {
             if (board) {
-                history.replace(generatePath('/team/:teamId/:boardId?/:viewId?/:cardId?', {
+                navigate(generatePath('/team/:teamId/:boardId?/:viewId?/:cardId?', {
                     teamId: board?.teamId,
                     boardId: board?.id,
-                    viewId: match.params.viewId,
-                    cardId: match.params.cardId,
-                }))
+                    viewId: params.viewId,
+                    cardId: params.cardId,
+                }), {replace: true})
             }
         })
     }, [])
@@ -89,31 +80,56 @@ function WorkspaceToTeamRedirect() {
 function GlobalErrorRedirect() {
     const globalError = useAppSelector<string>(getGlobalError)
     const dispatch = useAppDispatch()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     useEffect(() => {
         if (globalError) {
             dispatch(setGlobalError(''))
-            history.replace(`/error?id=${globalError}`)
+            navigate(`/error?id=${globalError}`, {replace: true})
         }
-    }, [globalError, history])
+    }, [globalError, navigate])
 
     return null
 }
 
+type RouterWithHistoryProps = {
+    basename: string
+    history: History
+    children: React.ReactNode
+}
+
+const RouterWithHistory = ({basename, children, history}: RouterWithHistoryProps): JSX.Element => {
+    const [state, setState] = React.useState({
+      action: history.action,
+      location: history.location,
+    });
+
+    React.useLayoutEffect(() => history.listen(setState), [history]);
+
+    return (
+      <Router
+        basename={basename}
+        children={children}
+        location={state.location}
+        navigationType={state.action}
+        navigator={history}
+      />
+    )
+}
+
 type Props = {
-    history?: History<unknown>
+    history?: History
 }
 
 const FocalboardRouter = (props: Props): JSX.Element => {
     const isPlugin = Utils.isFocalboardPlugin()
 
-    let browserHistory: History<unknown>
+    let browserHistory: History
     if (props.history) {
         browserHistory = props.history
     } else {
         browserHistory = useMemo(() => {
-            return createBrowserHistory({basename: Utils.getFrontendBaseURL()})
+            return createBrowserHistory()
         }, [])
     }
 
@@ -126,19 +142,21 @@ const FocalboardRouter = (props: Props): JSX.Element => {
     }
 
     return (
-        <Router history={browserHistory}>
+        <RouterWithHistory
+            basename={Utils.getFrontendBaseURL()}
+            history={browserHistory}
+        >
             <GlobalErrorRedirect/>
-            <Switch>
-                {isPlugin &&
-                    <HomeToCurrentTeam
-                        path='/'
-                        exact={true}
-                    />}
+            <Routes>
                 {isPlugin &&
                     <FBRoute
-                        exact={true}
-                        path='/welcome'
+                        path='/'
+                        loginRequired={true}
                     >
+                        <HomeToCurrentTeam/>
+                    </FBRoute>}
+                {isPlugin &&
+                    <FBRoute path='/welcome'>
                         <WelcomePage/>
                     </FBRoute>}
 
@@ -165,19 +183,22 @@ const FocalboardRouter = (props: Props): JSX.Element => {
                 <FBRoute
                     loginRequired={true}
                     path='/board/:boardId?/:viewId?/:cardId?'
-                    getOriginalPath={({params: {boardId, viewId, cardId}}) => {
+                    getOriginalPath={({boardId, viewId, cardId}) => {
                         return `/board/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
                     }}
                 >
                     <BoardPage/>
                 </FBRoute>
-                <FBRoute path={['/workspace/:workspaceId/:boardId?/:viewId?/:cardId?', '/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?']}>
+                <FBRoute path='/workspace/:workspaceId/:boardId?/:viewId?/:cardId?'>
+                    <WorkspaceToTeamRedirect/>
+                </FBRoute>
+                <FBRoute path='/workspace/:workspaceId/shared/:boardId?/:viewId?/:cardId?'>
                     <WorkspaceToTeamRedirect/>
                 </FBRoute>
                 <FBRoute
                     loginRequired={true}
                     path='/team/:teamId/:boardId?/:viewId?/:cardId?'
-                    getOriginalPath={({params: {teamId, boardId, viewId, cardId}}) => {
+                    getOriginalPath={({teamId, boardId, viewId, cardId}) => {
                         return `/team/${Utils.buildOriginalPath(teamId, boardId, viewId, cardId)}`
                     }}
                 >
@@ -188,7 +209,7 @@ const FocalboardRouter = (props: Props): JSX.Element => {
                     <FBRoute
                         path='/:boardId?/:viewId?/:cardId?'
                         loginRequired={true}
-                        getOriginalPath={({params: {boardId, viewId, cardId}}) => {
+                        getOriginalPath={({boardId, viewId, cardId}) => {
                             const boardIdIsValidUUIDV4 = UUID_REGEX.test(boardId || '')
                             if (boardIdIsValidUUIDV4) {
                                 return `/${Utils.buildOriginalPath('', boardId, viewId, cardId)}`
@@ -198,8 +219,8 @@ const FocalboardRouter = (props: Props): JSX.Element => {
                     >
                         <BoardPage/>
                     </FBRoute>}
-            </Switch>
-        </Router>
+            </Routes>
+        </RouterWithHistory>
     )
 }
 

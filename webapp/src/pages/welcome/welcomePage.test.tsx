@@ -4,8 +4,6 @@ import React from 'react'
 
 import {render, screen, waitFor} from '@testing-library/react'
 
-import {createMemoryHistory} from 'history'
-
 import {Router} from 'react-router-dom'
 
 import {Provider as ReduxProvider} from 'react-redux'
@@ -13,6 +11,7 @@ import {Provider as ReduxProvider} from 'react-redux'
 import userEvent from '@testing-library/user-event'
 
 import configureStore from 'redux-mock-store'
+import {MemoryRouter} from 'react-router-dom'
 
 import {mocked} from 'ts-jest/utils'
 
@@ -37,6 +36,20 @@ const mockedMutator = mocked(mutator, true)
 jest.mock('../../octoClient')
 const mockedOctoClient = mocked(octoClient, true)
 
+const mockedNavigate = jest.fn();
+let mockedSearchParamsGet = jest.fn();
+
+jest.mock('react-router-dom', () => {
+    const originalModule = jest.requireActual('react-router-dom')
+
+    return {
+        ...originalModule,
+        useNavigate: () => mockedNavigate,
+        useSearchParams: () => [{get: mockedSearchParamsGet}],
+    }
+})
+
+
 beforeEach(() => {
     jest.resetAllMocks()
     mockedMutator.patchUserConfig.mockImplementation(() => Promise.resolve({
@@ -53,7 +66,6 @@ afterEach(() => {
 })
 
 describe('pages/welcome', () => {
-    let history = createMemoryHistory()
     const mockStore = configureStore([thunk])
     const store = mockStore({
         teams: {
@@ -66,74 +78,47 @@ describe('pages/welcome', () => {
         },
     })
 
-    beforeEach(() => {
-        history = createMemoryHistory()
-    })
-
     test('Welcome Page shows Explore Page', () => {
-        const component = (
+        const {container} = render(wrapIntl(
             <ReduxProvider store={store}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
+                <WelcomePage/>
             </ReduxProvider>
-        )
+        ), {wrapper: MemoryRouter})
 
-        const {container} = render(component)
         expect(screen.getByText('Take a tour')).toBeDefined()
         expect(container).toMatchSnapshot()
     })
 
     test('Welcome Page shows Explore Page with subpath', () => {
         w.baseURL = '/subpath'
-        const component = (
-            <ReduxProvider store={store}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
-            </ReduxProvider>
-        )
 
-        const {container} = render(component)
+        const {container} = render(wrapIntl(
+            <ReduxProvider store={store}>
+                <WelcomePage/>
+            </ReduxProvider>
+        ), {wrapper: MemoryRouter})
+
         expect(screen.getByText('Take a tour')).toBeDefined()
         expect(container).toMatchSnapshot()
     })
 
     test('Welcome Page shows Explore Page And Then Proceeds after Clicking Explore', async () => {
-        history.replace = jest.fn()
-
-        const component = (
+        const component = render(wrapIntl(
             <ReduxProvider store={store}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
+                <WelcomePage/>
             </ReduxProvider>
-        )
+        ), {wrapper: MemoryRouter})
 
-        render(component)
         const exploreButton = screen.getByText('No thanks, I\'ll figure it out myself')
         expect(exploreButton).toBeDefined()
         userEvent.click(exploreButton)
         await waitFor(() => {
-            expect(history.replace).toBeCalledWith('/team/team_id_1')
+            expect(mockedNavigate).toBeCalledWith('/team/team_id_1', {replace: true})
             expect(mockedMutator.patchUserConfig).toBeCalledTimes(1)
         })
     })
 
     test('Welcome Page does not render explore page the second time we visit it', async () => {
-        history.replace = jest.fn()
         const customStore = mockStore({
             teams: {
                 current: {id: 'team_id_1'},
@@ -147,27 +132,19 @@ describe('pages/welcome', () => {
             },
         })
 
-        const component = (
+        const component = render(wrapIntl(
             <ReduxProvider store={customStore}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
+                <WelcomePage/>
             </ReduxProvider>
-        )
+        ), {wrapper: MemoryRouter})
 
-        render(component)
         await waitFor(() => {
-            expect(history.replace).toBeCalledWith('/team/team_id_1')
+            expect(mockedNavigate).toBeCalledWith('/team/team_id_1', {replace: true})
         })
     })
 
     test('Welcome Page redirects us when we have a r query parameter with welcomePageViewed set to true', async () => {
-        history.replace = jest.fn()
-        history.location.search = 'r=123'
+        mockedSearchParamsGet = jest.fn(() => '123')
 
         const customStore = mockStore({
             teams: {
@@ -181,27 +158,19 @@ describe('pages/welcome', () => {
                 },
             },
         })
-        const component = (
+        const component = render(wrapIntl(
             <ReduxProvider store={customStore}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
+                <WelcomePage/>
             </ReduxProvider>
-        )
+        ), {wrapper: MemoryRouter})
 
-        render(component)
         await waitFor(() => {
-            expect(history.replace).toBeCalledWith('123')
+            expect(mockedNavigate).toBeCalledWith('123', {replace: true})
         })
     })
 
     test('Welcome Page redirects us when we have a r query parameter with welcomePageViewed set to null', async () => {
-        history.replace = jest.fn()
-        history.location.search = 'r=123'
+        mockedSearchParamsGet = jest.fn(() => '123')
 
         const localStore = mockStore({
             teams: {
@@ -214,29 +183,21 @@ describe('pages/welcome', () => {
             },
         })
 
-        const component = (
+        const component = render(wrapIntl(
             <ReduxProvider store={localStore}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
+                <WelcomePage/>
             </ReduxProvider>
-        )
-        render(component)
+        ), {wrapper: MemoryRouter})
         const exploreButton = screen.getByText('No thanks, I\'ll figure it out myself')
         expect(exploreButton).toBeDefined()
         userEvent.click(exploreButton)
         await waitFor(() => {
-            expect(history.replace).toBeCalledWith('123')
+            expect(mockedNavigate).toBeCalledWith('123', {replace: true})
             expect(mockedMutator.patchUserConfig).toBeCalledTimes(1)
         })
     })
 
     test('Welcome page starts tour on clicking Take a tour button', async () => {
-        history.replace = jest.fn()
         const user = {
             props: {
                 focalboard_welcomePageViewed: '1',
@@ -246,27 +207,19 @@ describe('pages/welcome', () => {
         } as unknown as IUser
         mockedOctoClient.getMe.mockResolvedValue(user)
 
-        const component = (
+        const component = render(wrapIntl(
             <ReduxProvider store={store}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
+                <WelcomePage/>
             </ReduxProvider>
-        )
-        render(component)
+        ), {wrapper: MemoryRouter})
         const exploreButton = screen.getByText('Take a tour')
         expect(exploreButton).toBeDefined()
         userEvent.click(exploreButton)
         await waitFor(() => expect(mockedOctoClient.prepareOnboarding).toBeCalledTimes(1))
-        await waitFor(() => expect(history.replace).toBeCalledWith('/team/team_id_1/board_id_1'))
+        await waitFor(() => expect(mockedNavigate).toBeCalledWith('/team/team_id_1/board_id_1', {replace: true}))
     })
 
     test('Welcome page skips tour on clicking no thanks option', async () => {
-        history.replace = jest.fn()
         const user = {
             props: {
                 focalboard_welcomePageViewed: '1',
@@ -276,21 +229,14 @@ describe('pages/welcome', () => {
         } as unknown as IUser
         mockedOctoClient.getMe.mockResolvedValue(user)
 
-        const component = (
+        const component = render(wrapIntl(
             <ReduxProvider store={store}>
-                {
-                    wrapIntl(
-                        <Router history={history}>
-                            <WelcomePage/>
-                        </Router>,
-                    )
-                }
+                <WelcomePage/>
             </ReduxProvider>
-        )
-        render(component)
+        ), {wrapper: MemoryRouter})
         const exploreButton = screen.getByText('No thanks, I\'ll figure it out myself')
         expect(exploreButton).toBeDefined()
         userEvent.click(exploreButton)
-        await waitFor(() => expect(history.replace).toBeCalledWith('/team/team_id_1'))
+        await waitFor(() => expect(mockedNavigate).toBeCalledWith('/team/team_id_1', {replace: true}))
     })
 })

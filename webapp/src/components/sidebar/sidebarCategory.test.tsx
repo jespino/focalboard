@@ -2,8 +2,7 @@
 // See LICENSE.txt for license information.
 import React from 'react'
 
-import {createMemoryHistory} from 'history'
-import {Router} from 'react-router-dom'
+import {MemoryRouter} from 'react-router-dom'
 
 import {render} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -23,7 +22,6 @@ describe('components/sidebarCategory', () => {
 
     const view = TestBlockFactory.createBoardView(board)
     view.fields.sortOptions = []
-    const history = createMemoryHistory()
 
     const board1 = TestBlockFactory.createBoard()
     const board2 = TestBlockFactory.createBoard()
@@ -73,19 +71,17 @@ describe('components/sidebarCategory', () => {
         const mockStore = configureStore([])
         const store = mockStore(state)
 
-        const component = wrapIntl(
+        const {container} = render(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
-                    <SidebarCategory
-                        hideSidebar={() => {}}
-                        categoryBlocks={categoryBlocks1}
-                        boards={boards}
-                        allCategories={allCategoryBlocks}
-                    />
-                </Router>
+                <SidebarCategory
+                    hideSidebar={() => {}}
+                    categoryBlocks={categoryBlocks1}
+                    boards={boards}
+                    allCategories={allCategoryBlocks}
+                />
             </ReduxProvider>,
-        )
-        const {container} = render(component)
+        ), {wrapper: MemoryRouter})
+
         expect(container).toMatchSnapshot()
 
         // testing collapsed state of category

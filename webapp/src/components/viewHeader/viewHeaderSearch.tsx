@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import React, {useState, useRef, useEffect, useMemo} from 'react'
-import {useRouteMatch} from 'react-router-dom'
+import {useParams} from 'react-router-dom'
 import {FormattedMessage, useIntl} from 'react-intl'
 import {useHotkeys} from 'react-hotkeys-hook'
 import {debounce} from 'lodash'
@@ -16,12 +16,12 @@ const ViewHeaderSearch = (): JSX.Element => {
     const searchText = useAppSelector<string>(getSearchText)
     const dispatch = useAppDispatch()
     const intl = useIntl()
-    const match = useRouteMatch<{viewId?: string}>()
+    const params = useParams<{viewId?: string}>()
 
     const searchFieldRef = useRef<{focus(selectAll?: boolean): void}>(null)
     const [isSearching, setIsSearching] = useState(Boolean(searchText))
     const [searchValue, setSearchValue] = useState(searchText)
-    const [currentView, setCurrentView] = useState(match.params?.viewId)
+    const [currentView, setCurrentView] = useState(params.viewId)
 
     const dispatchSearchText = (value: string) => {
         dispatch(setSearchText(value))
@@ -31,7 +31,7 @@ const ViewHeaderSearch = (): JSX.Element => {
         () => debounce(dispatchSearchText, 200), [])
 
     useEffect(() => {
-        const viewId = match.params?.viewId
+        const viewId = params.viewId
         if (viewId !== currentView) {
             setCurrentView(viewId)
             setSearchValue('')
@@ -42,7 +42,7 @@ const ViewHeaderSearch = (): JSX.Element => {
             debouncedDispatchSearchText.cancel()
             dispatchSearchText('')
         }
-    }, [match.url])
+    }, [params.viewId])
 
     useEffect(() => {
         return () => {

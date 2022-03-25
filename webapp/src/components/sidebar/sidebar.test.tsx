@@ -3,9 +3,8 @@
 import React from 'react'
 import configureStore from 'redux-mock-store'
 
-import {createMemoryHistory} from 'history'
 import {Provider as ReduxProvider} from 'react-redux'
-import {Router} from 'react-router-dom'
+import {MemoryRouter} from 'react-router-dom'
 
 import {render} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -56,16 +55,12 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
-
-        const component = wrapIntl(
+        const {container} = render(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
-                    <Sidebar/>
-                </Router>
+                <Sidebar/>
             </ReduxProvider>,
-        )
-        const {container} = render(component)
+        ), {wrapper: MemoryRouter})
+
         expect(container).toMatchSnapshot()
 
         const hideSidebar = container.querySelector('button > .HideSidebarIcon')
@@ -106,16 +101,11 @@ describe('components/sidebarSidebar', () => {
             },
         })
 
-        const history = createMemoryHistory()
-
-        const component = wrapIntl(
+        const {container} = render(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
-                    <Sidebar/>
-                </Router>
+                <Sidebar/>
             </ReduxProvider>,
-        )
-        const {container} = render(component)
+        ), {wrapper: MemoryRouter})
         expect(container).toMatchSnapshot()
 
         const hideSidebar = container.querySelector('button > .HideSidebarIcon')
@@ -158,16 +148,12 @@ describe('components/sidebarSidebar', () => {
     //         },
     //     })
 
-    //     const history = createMemoryHistory()
 
-    //     const component = wrapIntl(
+    //     const {container} = render(wrapIntl(
     //         <ReduxProvider store={store}>
-    //             <Router history={history}>
-    //                 <Sidebar/>
-    //             </Router>
+    //             <Sidebar/>
     //         </ReduxProvider>,
-    //     )
-    //     const {container} = render(component)
+    //     ), {wrapper: MemoryRouter})
     //     expect(container).toMatchSnapshot()
 
     //     const addBoardButton = container.querySelector('.SidebarAddBoardMenu > .MenuWrapper')

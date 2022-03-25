@@ -6,8 +6,7 @@ import 'isomorphic-fetch'
 
 import React from 'react'
 import {Provider as ReduxProvider} from 'react-redux'
-import {Router} from 'react-router-dom'
-import {createMemoryHistory} from 'history'
+import {MemoryRouter} from 'react-router-dom'
 
 import configureStore from 'redux-mock-store'
 
@@ -67,26 +66,21 @@ describe('/components/viewMenu', () => {
         clientConfig: {},
     }
 
-    const history = createMemoryHistory()
-
     it('should match snapshot', () => {
         const mockStore = configureStore([])
         const store = mockStore(state)
 
-        const component = wrapDNDIntl(
+        const container = render(wrapDNDIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
-                    <ViewMenu
-                        board={board}
-                        activeView={activeView}
-                        views={views}
-                        readonly={false}
-                    />
-                </Router>
+                <ViewMenu
+                    board={board}
+                    activeView={activeView}
+                    views={views}
+                    readonly={false}
+                />
             </ReduxProvider>,
-        )
+        ), {wrapper: MemoryRouter})
 
-        const container = render(component)
         expect(container).toMatchSnapshot()
     })
 
@@ -94,20 +88,17 @@ describe('/components/viewMenu', () => {
         const mockStore = configureStore([])
         const store = mockStore(state)
 
-        const component = wrapDNDIntl(
+        const container = render(wrapDNDIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
-                    <ViewMenu
-                        board={board}
-                        activeView={activeView}
-                        views={views}
-                        readonly={true}
-                    />
-                </Router>
+                <ViewMenu
+                    board={board}
+                    activeView={activeView}
+                    views={views}
+                    readonly={true}
+                />
             </ReduxProvider>,
-        )
+        ), {wrapper: MemoryRouter})
 
-        const container = render(component)
         expect(container).toMatchSnapshot()
     })
 })

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import React, {useState} from 'react'
-import {useHistory, Link} from 'react-router-dom'
+import {useNavigate, Link} from 'react-router-dom'
 import {FormattedMessage} from 'react-intl'
 
 import {useAppDispatch} from '../store/hooks'
@@ -16,7 +16,7 @@ const RegisterPage = () => {
     const [password, setPassword] = useState('')
     const [email, setEmail] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
-    const history = useHistory()
+    const navigate = useNavigate()
     const dispatch = useAppDispatch()
 
     const handleRegister = async (): Promise<void> => {
@@ -28,7 +28,7 @@ const RegisterPage = () => {
             const logged = await client.login(username, password)
             if (logged) {
                 await dispatch(fetchMe())
-                history.push('/')
+                navigate('/')
             }
         } else if (response.code === 401) {
             setErrorMessage('Invalid registration link, please contact your administrator')

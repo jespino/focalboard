@@ -23,7 +23,7 @@ import FocalboardRouter from './router'
 import {IUser} from './user'
 
 type Props = {
-    history?: History<unknown>
+    history?: History
 }
 
 const App = (props: Props): JSX.Element => {

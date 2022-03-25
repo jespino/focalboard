@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import React, {useState, useCallback, useMemo} from 'react'
-import {useRouteMatch} from 'react-router-dom'
+import {useParams} from 'react-router-dom'
 import {useIntl} from 'react-intl'
 
 import {Board, IPropertyTemplate} from '../../blocks/board'
@@ -50,7 +50,7 @@ const KanbanCard = (props: Props) => {
     const intl = useIntl()
     const [isDragging, isOver, cardRef] = useSortable('card', card, !props.readonly, props.onDrop)
     const visiblePropertyTemplates = props.visiblePropertyTemplates || []
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string}>()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string}>()
     let className = props.isSelected ? 'KanbanCard selected' : 'KanbanCard'
     if (props.isManualSort && isOver) {
         className += ' dragover'
@@ -95,7 +95,7 @@ const KanbanCard = (props: Props) => {
     }, [props.onClick, card])
 
     const isOnboardingCard = card.title === 'Create a new card'
-    const showOnboarding = isOnboardingCard && !match.params.cardId && !board.isTemplate && Utils.isFocalboardPlugin()
+    const showOnboarding = isOnboardingCard && !params.cardId && !board.isTemplate && Utils.isFocalboardPlugin()
 
     return (
         <>
@@ -185,8 +185,8 @@ const KanbanCard = (props: Props) => {
                     </Tooltip>
                 ))}
                 {props.visibleBadges && <CardBadges card={card}/>}
-                {showOnboarding && !match.params.cardId && <OpenCardTourStep/>}
-                {showOnboarding && !match.params.cardId && <CopyLinkTourStep/>}
+                {showOnboarding && !params.cardId && <OpenCardTourStep/>}
+                {showOnboarding && !params.cardId && <CopyLinkTourStep/>}
             </div>
 
             {showConfirmationDialogBox && <ConfirmationDialogBox dialogBox={confirmDialogProps}/>}

@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import React, {useCallback, useState} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
+import {generatePath, useNavigate, useParams} from 'react-router-dom'
 
 import {Board} from '../../blocks/board'
 import mutator from '../../mutator'
@@ -22,6 +22,7 @@ import {useAppSelector} from '../../store/hooks'
 import {IUser} from '../../user'
 import {getMe} from '../../store/users'
 import {Utils} from '../../utils'
+import {useCurrentRoutePath} from '../../hooks/router'
 import Update from '../../widgets/icons/update'
 
 import telemetryClient, {TelemetryActions, TelemetryCategory} from '../../telemetry/telemetryClient'
@@ -45,13 +46,14 @@ type Props = {
 const SidebarCategory = (props: Props) => {
     const [collapsed, setCollapsed] = useState(false)
     const intl = useIntl()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const [deleteBoard, setDeleteBoard] = useState<Board|null>()
     const [showDeleteCategoryDialog, setShowDeleteCategoryDialog] = useState<boolean>(false)
     const [categoryMenuOpen, setCategoryMenuOpen] = useState<boolean>(false)
 
-    const match = useRouteMatch<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
+    const params = useParams<{boardId: string, viewId?: string, cardId?: string, teamId?: string}>()
+    const path = useCurrentRoutePath()
     const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false)
     const [showUpdateCategoryModal, setShowUpdateCategoryModal] = useState(false)
     const me = useAppSelector<IUser|null>(getMe)
@@ -62,27 +64,27 @@ const SidebarCategory = (props: Props) => {
     const showBoard = useCallback((boardId) => {
         // if the same board, reuse the match params
         // otherwise remove viewId and cardId, results in first view being selected
-        const params = {...match.params, boardId: boardId || ''}
-        if (boardId !== match.params.boardId) {
-            params.viewId = undefined
-            params.cardId = undefined
+        const newParams = {...params, boardId: boardId || ''}
+        if (boardId !== params.boardId) {
+            newParams.viewId = undefined
+            newParams.cardId = undefined
         }
-        const newPath = generatePath(match.path, params)
-        history.push(newPath)
+        const newPath = generatePath(path, newParams)
+        navigate(newPath)
         props.hideSidebar()
-    }, [match, history])
+    }, [params, path, navigate])
 
     const showView = useCallback((viewId, boardId) => {
         // if the same board, reuse the match params
         // otherwise remove viewId and cardId, results in first view being selected
-        const params = {...match.params, boardId: boardId || '', viewId: viewId || ''}
-        if (boardId !== match.params.boardId && viewId !== match.params.viewId) {
-            params.cardId = undefined
+        const newParams = {...params, boardId: boardId || '', viewId: viewId || ''}
+        if (boardId !== params.boardId && viewId !== params.viewId) {
+            newParams.cardId = undefined
         }
-        const newPath = generatePath(match.path, params)
-        history.push(newPath)
+        const newPath = generatePath(path, newParams)
+        navigate(newPath)
         props.hideSidebar()
-    }, [match, history])
+    }, [params, path, navigate])
 
     const blocks = props.categoryBlocks.blockIDs || []
 

@@ -36,13 +36,8 @@ jest.mock('react-router', () => {
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {
-                url: 'http://localhost/',
-                path: '/',
-                params,
-                isExact: true,
-            }
+        useParams: jest.fn(() => {
+            return params
         }),
     }
 })

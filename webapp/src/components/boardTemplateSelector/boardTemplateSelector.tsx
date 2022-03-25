@@ -2,7 +2,7 @@
 // See LICENSE.txt for license information.
 import React, {useEffect, useState, useCallback, useMemo} from 'react'
 import {FormattedMessage, useIntl} from 'react-intl'
-import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
+import {generatePath, useNavigate, useParams} from 'react-router-dom'
 
 import {Board} from '../../blocks/board'
 import IconButton from '../../widgets/buttons/iconButton'
@@ -21,6 +21,7 @@ import './boardTemplateSelector.scss'
 import {OnboardingBoardTitle} from '../cardDetail/cardDetail'
 import {IUser, UserConfigPatch, UserPropPrefix} from '../../user'
 import {getMe, patchProps} from '../../store/users'
+import {useCurrentRoutePath} from '../../hooks/router'
 import {BaseTourSteps, TOUR_BASE} from '../onboardingTour'
 
 import BoardTemplateSelectorPreview from './boardTemplateSelectorPreview'
@@ -39,19 +40,20 @@ const BoardTemplateSelector = (props: Props) => {
     const {title, description, onClose} = props
     const dispatch = useAppDispatch()
     const intl = useIntl()
-    const history = useHistory()
-    const match = useRouteMatch<{boardId: string, viewId?: string}>()
+    const navigate = useNavigate()
+    const params = useParams<{boardId: string, viewId?: string}>()
+    const path = useCurrentRoutePath()
     const me = useAppSelector<IUser|null>(getMe)
 
     const showBoard = useCallback(async (boardId) => {
-        const params = {...match.params, boardId: boardId || ''}
-        delete params.viewId
-        const newPath = generatePath(match.path, params)
-        history.push(newPath)
+        const newParams = {...params, boardId: boardId || ''}
+        delete newParams.viewId
+        const newPath = generatePath(path, newParams)
+        navigate(newPath)
         if (onClose) {
             onClose()
         }
-    }, [match, history, onClose])
+    }, [params, path, navigate, onClose])
 
     useEffect(() => {
         if (octoClient.teamId !== '0' && globalTemplates.length === 0) {

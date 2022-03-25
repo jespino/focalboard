@@ -1,26 +1,28 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import {useEffect} from 'react'
-import {generatePath, useHistory, useRouteMatch} from 'react-router-dom'
+import {generatePath, useNavigate, useParams} from 'react-router-dom'
 
 import {getCurrentBoardId} from '../../store/boards'
 import {setCurrent as setCurrentView, getCurrentBoardViews} from '../../store/views'
 import {useAppSelector, useAppDispatch} from '../../store/hooks'
 import {UserSettings} from '../../userSettings'
 import {getSidebarCategories} from '../../store/sidebar'
+import {useCurrentRoutePath} from '../../hooks/router'
 
 const TeamToBoardAndViewRedirect = (): null => {
     const boardId = useAppSelector(getCurrentBoardId)
     const boardViews = useAppSelector(getCurrentBoardViews)
     const dispatch = useAppDispatch()
-    const history = useHistory()
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string, teamId?: string}>()
+    const navigate = useNavigate()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string, teamId?: string}>()
+    const path = useCurrentRoutePath()
     const categories = useAppSelector(getSidebarCategories)
-    const teamId = match.params.teamId || UserSettings.lastTeamId || '0'
+    const teamId = params.teamId || UserSettings.lastTeamId || '0'
 
     useEffect(() => {
-        let boardID = match.params.boardId
-        if (!match.params.boardId) {
+        let boardID = params.boardId || ''
+        if (!params.boardId) {
             // first preference is for last visited board
             boardID = UserSettings.lastBoardId[teamId]
 
@@ -37,8 +39,8 @@ const TeamToBoardAndViewRedirect = (): null => {
             }
 
             if (boardID) {
-                const newPath = generatePath(match.path, {...match.params, boardId: boardID, viewID: undefined})
-                history.replace(newPath)
+                const newPath = generatePath(path, {...params, boardId: boardID, viewID: undefined})
+                navigate(newPath, {replace: true})
 
                 // return from here because the loadBoardData() call
                 // will fetch the data to be used below. We'll
@@ -47,11 +49,11 @@ const TeamToBoardAndViewRedirect = (): null => {
             }
         }
 
-        let viewID = match.params.viewId
+        let viewID = params.viewId
 
         // when a view isn't open,
         // but the data is available, try opening a view
-        if ((!viewID || viewID === '0') && boardId && boardId === match.params.boardId && boardViews && boardViews.length > 0) {
+        if ((!viewID || viewID === '0') && boardId && boardId === params.boardId && boardViews && boardViews.length > 0) {
             // most recent view gets the first preference
             viewID = UserSettings.lastViewId[boardID]
             if (viewID) {
@@ -65,11 +67,11 @@ const TeamToBoardAndViewRedirect = (): null => {
             }
 
             if (viewID) {
-                const newPath = generatePath(match.path, {...match.params, viewId: viewID})
-                history.replace(newPath)
+                const newPath = generatePath(path, {...params, viewId: viewID})
+                navigate(newPath, {replace: true})
             }
         }
-    }, [teamId, match.params.boardId, match.params.viewId, categories.length, boardViews.length, boardId])
+    }, [teamId, params.boardId, params.viewId, categories.length, boardViews.length, boardId])
 
     return null
 }

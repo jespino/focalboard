@@ -4,13 +4,12 @@ import {render, screen, act, waitFor, within} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import React from 'react'
 import {MockStoreEnhanced} from 'redux-mock-store'
-import {createMemoryHistory} from 'history'
 
 import {mocked} from 'ts-jest/utils'
 
 import {Provider as ReduxProvider} from 'react-redux'
 
-import {MemoryRouter, Router} from 'react-router-dom'
+import {MemoryRouter} from 'react-router-dom'
 
 import Mutator from '../../mutator'
 import {Utils} from '../../utils'
@@ -19,13 +18,16 @@ import {mockDOM, mockStateStore, wrapDNDIntl} from '../../testUtils'
 
 import BoardTemplateSelector from './boardTemplateSelector'
 
+const mockedNavigate = jest.fn()
+
 jest.mock('react-router-dom', () => {
     const originalModule = jest.requireActual('react-router-dom')
 
     return {
         ...originalModule,
-        useRouteMatch: jest.fn(() => {
-            return {url: '/'}
+        useNavigate: () => mockedNavigate,
+        useParams: jest.fn(() => {
+            return {}
         }),
     }
 })
@@ -219,19 +221,15 @@ describe('components/boardTemplateSelector/boardTemplateSelector', () => {
             expect(mockedMutator.deleteBoard).toBeCalledTimes(1)
         })
         test('return BoardTemplateSelector and click edit template icon', async () => {
-            const history = createMemoryHistory()
-            history.push = jest.fn()
             render(wrapDNDIntl(
-                <Router history={history}>
-                    <ReduxProvider store={store}>
-                        <BoardTemplateSelector onClose={jest.fn()}/>
-                    </ReduxProvider>
-                </Router>,
-            ))
+                <ReduxProvider store={store}>
+                    <BoardTemplateSelector onClose={jest.fn()}/>
+                </ReduxProvider>
+            ), {wrapper: MemoryRouter})
             const editIcon = screen.getByText(template1Title).parentElement?.querySelector('.EditIcon')
             expect(editIcon).not.toBeNull()
             userEvent.click(editIcon!)
-            expect(history.push).toBeCalledTimes(1)
+            expect(mockedNavigate).toBeCalledTimes(1)
         })
         test('return BoardTemplateSelector and click to add board from template', async () => {
             render(wrapDNDIntl(

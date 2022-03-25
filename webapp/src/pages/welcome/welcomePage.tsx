@@ -3,7 +3,7 @@
 import React from 'react'
 import {FormattedMessage} from 'react-intl'
 
-import {useLocation, useHistory} from 'react-router-dom'
+import {useLocation, useNavigate, useSearchParams} from 'react-router-dom'
 
 import BoardWelcomePNG from '../../../static/boards-welcome.png'
 import BoardWelcomeSmallPNG from '../../../static/boards-welcome-small.png'
@@ -24,8 +24,8 @@ import TelemetryClient, {TelemetryActions, TelemetryCategory} from '../../teleme
 import {UserSettingKey} from '../../userSettings'
 
 const WelcomePage = () => {
-    const history = useHistory()
-    const queryString = new URLSearchParams(useLocation().search)
+    const navigate = useNavigate()
+    const [searchParams] = useSearchParams();
     const me = useAppSelector<IUser|null>(getMe)
     const currentTeam = useAppSelector<Team|null>(getCurrentTeam)
     const dispatch = useAppDispatch()
@@ -44,12 +44,12 @@ const WelcomePage = () => {
     }
 
     const goForward = () => {
-        if (queryString.get('r')) {
-            history.replace(queryString.get('r')!)
+        if (searchParams.get('r')) {
+            navigate(searchParams.get('r')!, {replace: true})
             return
         }
 
-        history.replace(`/team/${currentTeam?.id}`)
+        navigate(`/team/${currentTeam?.id}`, {replace: true})
     }
 
     const skipTour = async () => {
@@ -87,7 +87,7 @@ const WelcomePage = () => {
         const onboardingData = await octoClient.prepareOnboarding(currentTeam.id)
         await dispatch(fetchMe())
         const newPath = `/team/${onboardingData?.teamID}/${onboardingData?.boardID}`
-        history.replace(newPath)
+        navigate(newPath, {replace: true})
     }
 
     if (me?.props && me?.props[UserPropPrefix + UserSettingKey.WelcomePageViewed]) {

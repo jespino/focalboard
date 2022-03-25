@@ -2,12 +2,10 @@
 // See LICENSE.txt for license information.
 import React from 'react'
 
-import {createMemoryHistory} from 'history'
-import {Router} from 'react-router-dom'
-
 import {render} from '@testing-library/react'
 
 import {Provider as ReduxProvider} from 'react-redux'
+import {MemoryRouter} from 'react-router-dom'
 
 import configureStore from 'redux-mock-store'
 
@@ -22,7 +20,6 @@ describe('components/sidebarBoardItem', () => {
 
     const view = TestBlockFactory.createBoardView(board)
     view.fields.sortOptions = []
-    const history = createMemoryHistory()
 
     const categoryBlocks1 = TestBlockFactory.createCategoryBlocks()
     categoryBlocks1.name = 'Category 1'
@@ -69,22 +66,19 @@ describe('components/sidebarBoardItem', () => {
         const mockStore = configureStore([])
         const store = mockStore(state)
 
-        const component = wrapIntl(
+        const {container} = render(wrapIntl(
             <ReduxProvider store={store}>
-                <Router history={history}>
-                    <SidebarBoardItem
-                        categoryBlocks={categoryBlocks1}
-                        board={board}
-                        allCategories={allCategoryBlocks}
-                        isActive={true}
-                        showBoard={jest.fn()}
-                        showView={jest.fn()}
-                        onDeleteRequest={jest.fn()}
-                    />
-                </Router>
+                <SidebarBoardItem
+                    categoryBlocks={categoryBlocks1}
+                    board={board}
+                    allCategories={allCategoryBlocks}
+                    isActive={true}
+                    showBoard={jest.fn()}
+                    showView={jest.fn()}
+                    onDeleteRequest={jest.fn()}
+                />
             </ReduxProvider>,
-        )
-        const {container} = render(component)
+        ), {wrapper: MemoryRouter})
         expect(container).toMatchSnapshot()
     })
 })

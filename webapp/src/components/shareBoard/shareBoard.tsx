@@ -4,7 +4,7 @@
 import React, {useState, useEffect} from 'react'
 
 import {useIntl, FormattedMessage} from 'react-intl'
-import {generatePath, useRouteMatch} from 'react-router'
+import {generatePath, useParams} from 'react-router'
 import Select from 'react-select/async'
 import {CSSObject} from '@emotion/serialize'
 
@@ -102,7 +102,7 @@ export default function ShareBoardDialog(props: Props): JSX.Element {
     const [publish, setPublish] = useState(false)
 
     const intl = useIntl()
-    const match = useRouteMatch<{teamId?: string, boardId: string, viewId: string}>()
+    const params = useParams<{teamId?: string, boardId: string, viewId: string}>()
 
     const loadData = async () => {
         const newSharing = await client.getSharing(boardId)
@@ -211,30 +211,30 @@ export default function ShareBoardDialog(props: Props): JSX.Element {
     shareUrl.searchParams.set('r', readToken)
     const boardUrl = new URL(window.location.toString())
 
-    if (match.params.teamId) {
+    if (params.teamId) {
         const newPath = generatePath('/team/:teamId/shared/:boardId/:viewId', {
-            boardId: match.params.boardId,
-            viewId: match.params.viewId,
-            teamId: match.params.teamId,
+            boardId: params.boardId,
+            viewId: params.viewId,
+            teamId: params.teamId,
         })
         shareUrl.pathname = Utils.buildURL(newPath)
 
         const boardPath = generatePath('/team/:teamId/:boardId/:viewId', {
-            boardId: match.params.boardId,
-            viewId: match.params.viewId,
-            teamId: match.params.teamId,
+            boardId: params.boardId,
+            viewId: params.viewId,
+            teamId: params.teamId,
         })
         boardUrl.pathname = Utils.getFrontendBaseURL() + boardPath
     } else {
         const newPath = generatePath('/shared/:boardId/:viewId', {
-            boardId: match.params.boardId,
-            viewId: match.params.viewId,
+            boardId: params.boardId,
+            viewId: params.viewId,
         })
         shareUrl.pathname = Utils.buildURL(newPath)
         boardUrl.pathname = Utils.buildURL(
             generatePath(':boardId/:viewId', {
-                boardId: match.params.boardId,
-                viewId: match.params.viewId,
+                boardId: params.boardId,
+                viewId: params.viewId,
             },
             ))
     }

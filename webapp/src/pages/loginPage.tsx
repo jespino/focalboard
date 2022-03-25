@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import React, {useState} from 'react'
-import {useHistory, Link} from 'react-router-dom'
+import {useNavigate, Link} from 'react-router-dom'
 import {FormattedMessage} from 'react-intl'
 
 import {useAppDispatch} from '../store/hooks'
@@ -15,14 +15,14 @@ const LoginPage = () => {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
-    const history = useHistory()
+    const navigate = useNavigate()
     const dispatch = useAppDispatch()
 
     const handleLogin = async (): Promise<void> => {
         const logged = await client.login(username, password)
         if (logged) {
             await dispatch(fetchMe())
-            history.push('/')
+            navigate('/')
         } else {
             setErrorMessage('Login failed')
         }

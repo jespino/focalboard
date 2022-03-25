@@ -2,9 +2,9 @@
 // See LICENSE.txt for license information.
 import React from 'react'
 import {
-    Redirect,
+    Navigate,
     Route,
-    useRouteMatch,
+    useParams,
 } from 'react-router-dom'
 
 import {Utils} from './utils'
@@ -14,30 +14,28 @@ import {UserSettingKey} from './userSettings'
 import {IUser, UserPropPrefix} from './user'
 
 type RouteProps = {
-    path: string|string[]
-    exact?: boolean
-    render?: (props: any) => React.ReactElement
-    component?: React.ComponentType
+    path: string
+    element?: React.ReactElement
     children?: React.ReactElement
-    getOriginalPath?: (match: any) => string
+    getOriginalPath?: (params: any) => string
     loginRequired?: boolean
 }
 
 function FBRoute(props: RouteProps) {
     const loggedIn = useAppSelector<boolean|null>(getLoggedIn)
-    const match = useRouteMatch<any>()
+    const params = useParams<any>()
     const me = useAppSelector<IUser|null>(getMe)
 
     let originalPath
     if (props.getOriginalPath) {
-        originalPath = props.getOriginalPath(match)
+        originalPath = props.getOriginalPath(params)
     }
 
     if (Utils.isFocalboardPlugin() && (me?.id !== 'single-user') && props.path !== '/welcome' && loggedIn === true && !me?.props[UserPropPrefix + UserSettingKey.WelcomePageViewed]) {
         if (originalPath) {
-            return <Redirect to={`/welcome?r=${originalPath}`}/>
+            return <Navigate to={`/welcome?r=${originalPath}`} replace/>
         }
-        return <Redirect to='/welcome'/>
+        return <Navigate to='/welcome' replace/>
     }
 
     if (loggedIn === false && props.loginRequired) {
@@ -47,18 +45,16 @@ function FBRoute(props: RouteProps) {
                 redirectUrl = redirectUrl.slice(1)
             }
             const loginUrl = `/error?id=not-logged-in&r=${encodeURIComponent(redirectUrl)}`
-            return <Redirect to={loginUrl}/>
+            return <Navigate to={loginUrl} replace/>
         }
-        return <Redirect to='/error?id=not-logged-in'/>
+        return <Navigate to='/error?id=not-logged-in' replace/>
     }
 
     if (loggedIn === true || !props.loginRequired) {
         return (
             <Route
                 path={props.path}
-                render={props.render}
-                component={props.component}
-                exact={props.exact}
+                element={props.element}
             >
                 {props.children}
             </Route>

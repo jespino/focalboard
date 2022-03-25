@@ -3,7 +3,7 @@
 
 import React, {useState} from 'react'
 import {useIntl} from 'react-intl'
-import {useHistory} from 'react-router-dom'
+import {useNavigate} from 'react-router-dom'
 
 import {Constants} from '../../constants'
 import octoClient from '../../octoClient'
@@ -26,7 +26,7 @@ import './sidebarUserMenu.scss'
 declare let window: IAppWindow
 
 const SidebarUserMenu = () => {
-    const history = useHistory()
+    const navigate = useNavigate()
     const [showRegistrationLinkDialog, setShowRegistrationLinkDialog] = useState(false)
     const user = useAppSelector<IUser|null>(getMe)
     const intl = useIntl()
@@ -60,14 +60,14 @@ const SidebarUserMenu = () => {
                                 name={intl.formatMessage({id: 'Sidebar.logout', defaultMessage: 'Log out'})}
                                 onClick={async () => {
                                     await octoClient.logout()
-                                    history.push('/login')
+                                    navigate('/login')
                                 }}
                             />
                             <Menu.Text
                                 id='changePassword'
                                 name={intl.formatMessage({id: 'Sidebar.changePassword', defaultMessage: 'Change password'})}
                                 onClick={async () => {
-                                    history.push('/change_password')
+                                    navigate('/change_password')
                                 }}
                             />
                             <Menu.Text

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-present Mattermost, Inc. All Rights Reserved.
 // See LICENSE.txt for license information.
 import React, {useCallback, useEffect, useState} from 'react'
-import {generatePath, useRouteMatch, useHistory} from 'react-router-dom'
+import {generatePath, useParams, useNavigate} from 'react-router-dom'
 import {FormattedMessage} from 'react-intl'
 
 import {getCurrentTeam} from '../store/teams'
@@ -15,6 +15,7 @@ import {getClientConfig, setClientConfig} from '../store/clientConfig'
 import wsClient, {WSClient} from '../wsclient'
 import {ClientConfig} from '../config/clientConfig'
 import {Utils} from '../utils'
+import {useCurrentRoutePath} from '../hooks/router'
 
 import CenterPanel from './centerPanel'
 import BoardTemplateSelector from './boardTemplateSelector/boardTemplateSelector'
@@ -29,26 +30,26 @@ type Props = {
 function CenterContent(props: Props) {
     const team = useAppSelector(getCurrentTeam)
     const isLoading = useAppSelector(isLoadingBoard)
-    const match = useRouteMatch<{boardId: string, viewId: string, cardId?: string}>()
+    const params = useParams<{boardId: string, viewId: string, cardId?: string}>()
+    const path = useCurrentRoutePath()
     const board = useAppSelector(getCurrentBoard)
     const cards = useAppSelector(getCurrentViewCardsSortedFilteredAndGrouped)
-    const activeView = useAppSelector(getView(match.params.viewId))
+    const activeView = useAppSelector(getView(params?.viewId || ''))
     const views = useAppSelector(getCurrentBoardViews)
     const groupByProperty = useAppSelector(getCurrentViewGroupBy)
     const dateDisplayProperty = useAppSelector(getCurrentViewDisplayBy)
     const clientConfig = useAppSelector(getClientConfig)
-    const history = useHistory()
+    const navigate = useNavigate()
     const dispatch = useAppDispatch()
 
     const showCard = useCallback((cardId?: string) => {
-        const params = {...match.params, cardId}
-        let newPath = generatePath(match.path, params)
+        let newPath = generatePath(path, {...params, cardId})
         if (props.readonly) {
             newPath += `?r=${Utils.getReadToken()}`
         }
-        history.push(newPath)
+        navigate(newPath)
         dispatch(setCurrentCard(cardId || ''))
-    }, [match, history])
+    }, [params, path, navigate])
 
     useEffect(() => {
         const onConfigChangeHandler = (_: WSClient, config: ClientConfig) => {
@@ -77,7 +78,7 @@ function CenterContent(props: Props) {
                 readonly={props.readonly}
                 board={board}
                 cards={cards}
-                shownCardId={match.params.cardId}
+                shownCardId={params.cardId}
                 showCard={showCard}
                 activeView={activeView}
                 groupByProperty={property}
