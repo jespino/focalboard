@@ -33,6 +33,7 @@ import (
 	"github.com/mattermost/focalboard/server/ws"
 	"github.com/oklog/run"
 
+	"github.com/mattermost/mattermost-server/v6/services/systembus"
 	"github.com/mattermost/mattermost-server/v6/shared/filestore"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
@@ -61,6 +62,7 @@ type Server struct {
 	auditService           *audit.Audit
 	notificationService    *notify.Service
 	servicesStartStopMutex sync.Mutex
+	SendEvent              func(event *systembus.Event) error
 
 	localRouter     *mux.Router
 	localModeServer *http.Server

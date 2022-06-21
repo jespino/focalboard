@@ -4,7 +4,7 @@ go 1.18
 
 replace github.com/mattermost/focalboard/server => ../server
 
-replace github.com/mattermost/mattermost-server/v6 => github.com/mattermost/mattermost-server/v6 v6.0.0-20220613202234-182ae1234a49
+replace github.com/mattermost/mattermost-server/v6 => ../../mattermost-server
 
 require (
 	github.com/golang/mock v1.6.0

@@ -16,6 +16,7 @@ import (
 
 	mmModel "github.com/mattermost/mattermost-server/v6/model"
 
+	"github.com/mattermost/mattermost-server/v6/services/systembus"
 	"github.com/mattermost/mattermost-server/v6/shared/filestore"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
@@ -28,6 +29,7 @@ const (
 
 type pluginAPI interface {
 	GetUsers(options *mmModel.UserGetOptions) ([]*mmModel.User, *mmModel.AppError)
+	SendSystembusEvent(event *systembus.Event) error
 }
 
 type Services struct {

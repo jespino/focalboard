@@ -11,6 +11,7 @@ import (
 	"github.com/mattermost/focalboard/server/services/notify"
 	"github.com/mattermost/focalboard/server/utils"
 
+	"github.com/mattermost/mattermost-server/v6/services/systembus"
 	"github.com/mattermost/mattermost-server/v6/shared/mlog"
 )
 
@@ -191,6 +192,16 @@ func (a *App) DuplicateBoard(boardID, userID, toTeam string, asTemplate bool) (*
 		for _, board := range bab.Boards {
 			teamID = board.TeamID
 			a.wsAdapter.BroadcastBoardChange(teamID, board)
+
+			if a.pluginAPI != nil {
+				a.pluginAPI.SendSystembusEvent(&systembus.Event{
+					ID: "board-created",
+					Data: map[string]string{
+						"ID":    board.ID,
+						"Title": board.Title,
+					},
+				})
+			}
 		}
 		for _, block := range bab.Blocks {
 			blk := block
@@ -252,6 +263,16 @@ func (a *App) CreateBoard(board *model.Board, userID string, addMember bool) (*m
 		}
 		return nil
 	})
+
+	if a.pluginAPI != nil {
+		a.pluginAPI.SendSystembusEvent(&systembus.Event{
+			ID: "board-created",
+			Data: map[string]string{
+				"ID":    board.ID,
+				"Title": board.Title,
+			},
+		})
+	}
 
 	return newBoard, nil
 }
