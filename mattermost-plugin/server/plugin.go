@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/mattermost/focalboard/server/auth"
-	"github.com/mattermost/focalboard/server/model"
 	"github.com/mattermost/focalboard/server/server"
 	"github.com/mattermost/focalboard/server/services/config"
 	"github.com/mattermost/focalboard/server/services/notify"
@@ -183,7 +182,6 @@ func (p *Plugin) OnActivate() error {
 	}
 
 	p.server = server
-	fmt.Println("REGISTERING EVENT board-created")
 	p.API.RegisterSystembusEvent(&systembus.EventDefinition{
 		ID:          "board-created",
 		Name:        "Board Created",
@@ -194,9 +192,8 @@ func (p *Plugin) OnActivate() error {
 		ID:               "create-board",
 		Name:             "Create Board",
 		Description:      "Event emited when a board is created",
-		ConfigDefinition: map[string]string{"Title": "string", "TeamID": "string", "UserID": "string"},
+		ConfigDefinition: map[string]string{"Title": "string", "TeamID": "string", "ChannelID": "string", "UserID": "string"},
 	})
-	fmt.Println("REGISTERED EVENT board-created")
 	return server.Start()
 }
 
@@ -398,36 +395,10 @@ func (p *Plugin) MessageWillBeUpdated(_ *plugin.Context, newPost, _ *mmModel.Pos
 
 func (p *Plugin) OnActionCalled(actionDefinition *actions.ActionDefinition, config map[string]string, data map[string]string) (map[string]string, error) {
 	if actionDefinition.ID == "create-board" {
-		board := model.Board{
-			Title:       config["Title"],
-			CreatedBy:   config["UserID"],
-			ModifiedBy:  config["UserID"],
-			TeamID:      config["TeamID"],
-			Type:        "O",
-			MinimumRole: "editor",
-		}
-		fmt.Println("CREATING BOARD THROGH AN ACTION", actionDefinition, config, data)
-		b, err := p.server.App().CreateBoard(&board, config["UserID"], true)
+		b, err := p.server.App().CreateEmptyBoard(config["Title"], config["TeamID"], config["ChannelID"], config["UserID"], true)
 		if err != nil {
-			fmt.Println("ERROR CREATING BOARD THROGH AN ACTION", actionDefinition, config, data, err)
 			return nil, err
 		}
-		view := model.Block{
-			BoardID:    b.ID,
-			ParentID:   b.ID,
-			CreatedBy:  config["UserID"],
-			ModifiedBy: config["UserID"],
-			Type:       model.TypeView,
-			Title:      "Board View",
-			Fields:     map[string]interface{}{"viewType": "board"},
-		}
-		fmt.Println("BOARD CREATED", b)
-		err = p.server.App().InsertBlock(view, config["UserID"])
-		if err != nil {
-			fmt.Println("ERROR CREATING BOARD THROGH AN ACTION", actionDefinition, config, data, err)
-			return nil, err
-		}
-		fmt.Println("View CREATED")
 		return nil, nil
 	}
 	return nil, nil

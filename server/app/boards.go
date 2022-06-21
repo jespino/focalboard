@@ -236,6 +236,59 @@ func (a *App) GetTemplateBoards(teamID, userID string) ([]*model.Board, error) {
 	return a.store.GetTemplateBoards(teamID, userID)
 }
 
+func (a *App) CreateEmptyBoard(title string, teamID string, channelID string, userID string, addMember bool) (*model.Board, error) {
+	now := model.GetMillis()
+	board := model.Board{
+		TeamID:     teamID,
+		ChannelID:  channelID,
+		CreatedBy:  userID,
+		ModifiedBy: userID,
+		Type:       model.BoardTypePrivate,
+		Title:      title,
+		Properties: map[string]interface{}{},
+		CardProperties: []map[string]interface{}{
+			{"id": utils.NewID(utils.IDTypeNone), "name": "Status", "options": []string{}, "type": "select"},
+		},
+		CreateAt: now,
+		UpdateAt: now,
+	}
+	b, err := a.CreateBoard(&board, userID, true)
+	if err != nil {
+		return nil, err
+	}
+	boardView := model.Block{
+		ID:         utils.NewID(utils.IDTypeView),
+		Schema:     1,
+		BoardID:    b.ID,
+		ParentID:   b.ID,
+		CreatedBy:  userID,
+		ModifiedBy: userID,
+		Title:      "Board view",
+		CreateAt:   now,
+		UpdateAt:   now,
+		Type:       model.TypeView,
+		Fields: map[string]interface{}{
+			"viewType":           "board",
+			"sortOptions":        []string{},
+			"visiblePropertyIds": []string{},
+			"visibleOptionIds":   []string{},
+			"hiddenOptionIds":    []string{},
+			"collapsedOptionIds": []string{},
+			"filter":             []string{},
+			"cardOrder":          []string{},
+			"columnWidths":       map[string]string{},
+			"columnCalculations": map[string]string{},
+			"kanbanCalculations": map[string]string{},
+			"defaultTemplateId":  "",
+		},
+	}
+	err = a.InsertBlock(boardView, userID)
+	if err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
 func (a *App) CreateBoard(board *model.Board, userID string, addMember bool) (*model.Board, error) {
 	if board.ID != "" {
 		return nil, ErrNewBoardCannotHaveID
