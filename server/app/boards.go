@@ -314,18 +314,18 @@ func (a *App) CreateBoard(board *model.Board, userID string, addMember bool) (*m
 		if addMember {
 			a.wsAdapter.BroadcastMemberChange(newBoard.TeamID, newBoard.ID, member)
 		}
+
+		if a.pluginAPI != nil {
+			a.pluginAPI.SendSystembusEvent(&systembus.Event{
+				ID: "board-created",
+				Data: map[string]string{
+					"ID":    newBoard.ID,
+					"Title": newBoard.Title,
+				},
+			})
+		}
 		return nil
 	})
-
-	if a.pluginAPI != nil {
-		a.pluginAPI.SendSystembusEvent(&systembus.Event{
-			ID: "board-created",
-			Data: map[string]string{
-				"ID":    board.ID,
-				"Title": board.Title,
-			},
-		})
-	}
 
 	return newBoard, nil
 }

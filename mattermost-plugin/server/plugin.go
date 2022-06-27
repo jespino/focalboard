@@ -393,13 +393,20 @@ func (p *Plugin) MessageWillBeUpdated(_ *plugin.Context, newPost, _ *mmModel.Pos
 	return postWithBoardsEmbed(newPost), ""
 }
 
-func (p *Plugin) OnActionCalled(actionDefinition *actions.ActionDefinition, config map[string]string, data map[string]string) (map[string]string, error) {
+func (p *Plugin) OnActionCalled(actionDefinition *actions.ActionDefinition, data map[string]string) (map[string]string, error) {
+	fmt.Println("PluginAction called", actionDefinition, data)
 	if actionDefinition.ID == "create-board" {
-		b, err := p.server.App().CreateEmptyBoard(config["Title"], config["TeamID"], config["ChannelID"], config["UserID"], true)
+		b, err := p.server.App().CreateEmptyBoard(data["Title"], data["TeamID"], data["ChannelID"], data["UserID"], true)
 		if err != nil {
 			return nil, err
 		}
-		return nil, nil
+		result := map[string]string{}
+		for k, v := range data {
+			result[k] = v
+		}
+
+		result["BoardID"] = b.ID
+		return result, nil
 	}
 	return nil, nil
 }
